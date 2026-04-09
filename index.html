@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏠 Spese Domestiche</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #F0F4F8;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    background: #1565C0;
+    color: white;
+    padding: 22px;
+    border-radius: 16px;
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0D47A1;
+    background: #E3F2FD;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.3rem;
+    border: 2px solid #FFC107;
+    border-radius: 12px;
+    background: #FFFDE7;
+    margin-bottom: 12px;
+    outline: none;
+  }
+
+  input[type="number"]:focus, input[type="text"]:focus {
+    border-color: #1565C0;
+    background: white;
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    font-size: 1rem;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: transform 0.1s, opacity 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-lucia {
+    background: #E91E63;
+    color: white;
+  }
+
+  .btn-sergio {
+    background: #1565C0;
+    color: white;
+  }
+
+  .btn-azzera {
+    background: #D32F2F;
+    color: white;
+    margin-top: 10px;
+  }
+
+  .btn-aggiorna {
+    background: #388E3C;
+    color: white;
+    margin-bottom: 16px;
+  }
+
+  .riga-totale {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 4px;
+    border-bottom: 1px solid #F0F0F0;
+    font-size: 1rem;
+  }
+
+  .riga-totale:last-child { border-bottom: none; }
+
+  .riga-totale span:last-child {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #1565C0;
+  }
+
+  .saldo-box {
+    padding: 20px;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 12px;
+  }
+
+  .saldo-sergio { background: #FFCDD2; color: #B71C1C; }
+  .saldo-lucia  { background: #FFE0B2; color: #E65100; }
+  .saldo-pari   { background: #C8E6C9; color: #1B5E20; }
+
+  .messaggio {
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .msg-ok    { background: #E8F5E9; color: #2E7D32; }
+  .msg-errore{ background: #FFEBEE; color: #C62828; }
+
+  .sezione-azzera { margin-top: 10px; }
+
+  #codice-saldato {
+    display: none;
+    margin-top: 12px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 3px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<h1>🏠 Spese Domestiche</h1>
+
+<!-- INSERISCI SPESA -->
+<div class="card">
+  <h2>✏️ Inserisci nuova spesa</h2>
+
+  <label>👩 Importo Lucia (€)</label>
+  <input type="number" id="importo-lucia" placeholder="0.00" min="0" step="0.01">
+
+  <label>👨 Importo Sergio (€)</label>
+  <input type="number" id="importo-sergio" placeholder="0.00" min="0" step="0.01">
+
+  <label>📝 Nota (opzionale)</label>
+  <input type="text" id="nota" placeholder="es. spesa supermercato">
+
+  <button class="btn btn-lucia" onclick="aggiungiSpesa('Lucia')">
+    👩 Aggiungi spesa LUCIA
+  </button>
+  <button class="btn btn-sergio" onclick="aggiungiSpesa('Sergio')" style="margin-top:10px">
+    👨 Aggiungi spesa SERGIO
+  </button>
+
+  <div id="msg-spesa" class="messaggio"></div>
+</div>
+
+<!-- SITUAZIONE -->
+<div class="card">
+  <h2>📊 Situazione attuale</h2>
+  <button class="btn btn-aggiorna" onclick="caricaDati()">🔄 Aggiorna dati</button>
+
+  <div class="riga-totale">
+    <span>Totale spese Lucia</span>
+    <span id="tot-lucia">—</span>
+  </div>
+  <div class="riga-totale">
+    <span>Totale spese Sergio</span>
+    <span id="tot-sergio">—</span>
+  </div>
+  <div class="riga-totale">
+    <span>Totale complessivo</span>
+    <span id="tot-totale">—</span>
+  </div>
+  <div class="riga-totale">
+    <span>Lucia questo mese</span>
+    <span id="mese-lucia">—</span>
+  </div>
+  <div class="riga-totale">
+    <span>Sergio questo mese</span>
+    <span id="mese-sergio">—</span>
+  </div>
+
+  <div id="saldo-box" class="saldo-box saldo-pari">
+    Premi Aggiorna per vedere il saldo
+  </div>
+</div>
+
+<!-- AZZERA SALDO -->
+<div class="card">
+  <h2>🔴 Azzera saldo</h2>
+  <p style="color:#777; font-size:0.9rem; margin-bottom:14px">
+    Usa solo dopo aver fatto il bonifico di pareggio!
+  </p>
+
+  <div class="sezione-azzera">
+    <button class="btn btn-azzera" onclick="azzeraStep1()">
+      🔴 STEP 1 — Avvia pareggio
+    </button>
+
+    <div id="codice-saldato">
+      <label style="margin-top:14px">Scrivi SALDATO per confermare</label>
+      <input type="text" id="input-saldato" placeholder="SALDATO">
+      <button class="btn btn-azzera" onclick="azzeraStep2()">
+        ✅ STEP 2 — Conferma pareggio
+      </button>
+    </div>
+
+    <div id="msg-azzera" class="messaggio"></div>
+  </div>
+</div>
+
+<script>
+  const API = 'TUO_URL_QUI';
+
+  function euro(val) {
+    return '€' + parseFloat(val || 0).toFixed(2).replace('.', ',');
+  }
+
+  async function caricaDati() {
+    const box = document.getElementById('saldo-box');
+    box.textContent = 'Caricamento...';
+    try {
+      const r = await fetch(API);
+      const d = await r.json();
+
+      document.getElementById('tot-lucia').textContent   = euro(d.totLucia);
+      document.getElementById('tot-sergio').textContent  = euro(d.totSergio);
+      document.getElementById('tot-totale').textContent  = euro(d.totale);
+      document.getElementById('mese-lucia').textContent  = euro(d.meseLucia);
+      document.getElementById('mese-sergio').textContent = euro(d.meseSergio);
+
+      const saldo = d.saldo || '';
+      box.className = 'saldo-box';
+      if (saldo.includes('SERGIO')) {
+        box.classList.add('saldo-sergio');
+      } else if (saldo.includes('LUCIA')) {
+        box.classList.add('saldo-lucia');
+      } else {
+        box.classList.add('saldo-pari');
+      }
+      box.textContent = saldo || '✅ Siete pari!';
+    } catch(err) {
+      box.textContent = '⚠️ Errore caricamento dati';
+    }
+  }
+
+  async function aggiungiSpesa(chi) {
+    const importoId = chi === 'Lucia' ? 'importo-lucia' : 'importo-sergio';
+    const importo   = document.getElementById(importoId).value;
+    const nota      = document.getElementById('nota').value;
+    const msg       = document.getElementById('msg-spesa');
+    const btn       = event.target;
+
+    if (!importo || parseFloat(importo) <= 0) {
+      mostraMsg(msg, '⚠️ Inserisci un importo valido!', false);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Salvataggio...';
+
+    try {
+      const r = await fetch(API, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'aggiungiSpesa', chi, importo, nota })
+      });
+      const d = await r.json();
+
+      mostraMsg(msg, d.messaggio, d.ok);
+      if (d.ok) {
+        document.getElementById(importoId).value = '';
+        document.getElementById('nota').value = '';
+        caricaDati();
+      }
+    } catch(err) {
+      mostraMsg(msg, '⚠️ Errore di connessione', false);
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = chi === 'Lucia'
+      ? '👩 Aggiungi spesa LUCIA'
+      : '👨 Aggiungi spesa SERGIO';
+  }
+
+  function azzeraStep1() {
+    document.getElementById('codice-saldato').style.display = 'block';
+    const msg = document.getElementById('msg-azzera');
+    mostraMsg(msg, '🔴 Scrivi SALDATO e premi Conferma pareggio', false);
+  }
+
+  async function azzeraStep2() {
+    const codice = document.getElementById('input-saldato').value;
+    const msg    = document.getElementById('msg-azzera');
+
+    try {
+      const r = await fetch(API, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'azzeraStep2', codice })
+      });
+      const d = await r.json();
+
+      mostraMsg(msg, d.messaggio, d.ok);
+      if (d.ok) {
+        document.getElementById('codice-saldato').style.display = 'none';
+        document.getElementById('input-saldato').value = '';
+        caricaDati();
+      }
+    } catch(err) {
+      mostraMsg(msg, '⚠️ Errore di connessione', false);
+    }
+  }
+
+  function mostraMsg(el, testo, ok) {
+    el.textContent  = testo;
+    el.className    = 'messaggio ' + (ok ? 'msg-ok' : 'msg-errore');
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+
+  caricaDati();
+</script>
+</body>
+</html>
