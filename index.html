@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏠 Spese Domestiche</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #F0F4F8;
+    min-height: 100vh;
+    padding: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    text-align: center;
+    background: #1565C0;
+    color: white;
+    padding: 20px;
+    border-radius: 16px;
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  .card-titolo {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0D47A1;
+    background: #E3F2FD;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    margin-top: 12px;
+    font-size: 1rem;
+  }
+
+  input[type="number"],
+  input[type="text"] {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.3rem;
+    border: 2px solid #FFC107;
+    border-radius: 12px;
+    background: #FFFDE7;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="number"]:focus,
+  input[type="text"]:focus {
+    border-color: #1565C0;
+    background: white;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 20px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: transform 0.1s, opacity 0.2s;
+    letter-spacing: 0.5px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-lucia  { background: #E91E63; color: white; }
+  .btn-sergio { background: #1565C0; color: white; }
+  .btn-azzera { background: #D32F2F; color: white; }
+  .btn-verde  { background: #388E3C; color: white; }
+
+  .riga {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 4px;
+    border-bottom: 1px solid #F0F0F0;
+    font-size: 1rem;
+  }
+  .riga:last-child { border-bottom: none; }
+  .riga .valore {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #1565C0;
+  }
+
+  .saldo-box {
+    padding: 20px;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+  .saldo-sergio { background: #FFCDD2; color: #B71C1C; }
+  .saldo-lucia  { background: #FFE0B2; color: #E65100; }
+  .saldo-pari   { background: #C8E6C9; color: #1B5E20; }
+
+  .messaggio {
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 12px;
+    display: none;
+    text-align: center;
+  }
+  .msg-ok     { background: #E8F5E9; color: #2E7D32; display: block; }
+  .msg-errore { background: #FFEBEE; color: #C62828; display: block; }
+
+  #codice-saldato { display: none; margin-top: 12px; }
+
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 3px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-overlay {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>🏠 Spese Domestiche</h1>
+
+<!-- INSERISCI SPESA -->
+<div class="card">
+  <div class="card-titolo">✏️ Inserisci nuova spesa</div>
+
+  <label>👩 Importo Lucia (€)</label>
+  <input type="number" id="importo-lucia" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+
+  <label>👨 Importo Sergio (€)</label>
+  <input type="number" id="importo-sergio" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+
+  <label>📝 Nota (opzionale)</label>
+  <input type="text" id="nota" placeholder="es. spesa supermercato">
+
+  <button class="btn btn-lucia" id="btn-lucia" onclick="aggiungiSpesa('Lucia')">
+    👩 Aggiungi spesa LUCIA
+  </button>
+  <button class="btn btn-sergio" id="btn-sergio" onclick="aggiungiSpesa('Sergio')">
+    👨 Aggiungi spesa SERGIO
+  </button>
+
+  <div id="msg-spesa" class="messaggio"></div>
+</div>
+
+<!-- SITUAZIONE -->
+<div class="card">
+  <div class="card-titolo">📊 Situazione attuale</div>
+  <button class="btn btn-verde" onclick="caricaDati()">🔄 Aggiorna dati</button>
+
+  <div id="dati-loading" class="loading-overlay">Caricamento...</div>
+
+  <div id="dati-contenuto" style="display:none">
+    <div class="riga"><span>Totale spese Lucia</span><span class="valore" id="tot-lucia">—</span></div>
+    <div class="riga"><span>Totale spese Sergio</span><span class="valore" id="tot-sergio">—</span></div>
+    <div class="riga"><span>Totale complessivo</span><span class="valore" id="tot-totale">—</span></div>
+    <div class="riga"><span>Lucia questo mese</span><span class="valore" id="mese-lucia">—</span></div>
+    <div class="riga"><span>Sergio questo mese</span><span class="valore" id="mese-sergio">—</span></div>
+    <div id="saldo-box" class="saldo-box saldo-pari">—</div>
+  </div>
+</div>
+
+<!-- AZZERA SALDO -->
+<div class="card">
+  <div class="card-titolo">🔴 Azzera saldo</div>
+  <p style="color:#777; font-size:0.9rem; margin-bottom:14px">
+    Usa solo dopo aver fatto il bonifico di pareggio!
+  </p>
+
+  <button class="btn btn-azzera" onclick="azzeraStep1()">
+    🔴 STEP 1 — Avvia pareggio
+  </button>
+
+  <div id="codice-saldato">
+    <label>Scrivi SALDATO per confermare</label>
+    <input type="text" id="input-saldato" placeholder="SALDATO">
+    <button class="btn btn-azzera" onclick="azzeraStep2()">
+      ✅ STEP 2 — Conferma pareggio
+    </button>
+  </div>
+
+  <div id="msg-azzera" class="messaggio"></div>
+</div>
+
+<script>
+  // ⬇️ SOSTITUISCI CON IL TUO URL
+  const API = 'https://script.google.com/macros/s/AKfycbzWBaqY-Fy5xYrfbjZdzDRMgweASZArRDw0zhPR4K8iyBeWzNK7AQ0T2RvdZE5dvn7Lvw/exec';
+
+  function euro(val) {
+    return '€' + parseFloat(val || 0).toFixed(2).replace('.', ',');
+  }
+
+  function mostraMsg(id, testo, ok) {
+    const el = document.getElementById(id);
+    el.textContent = testo;
+    el.className = 'messaggio ' + (ok ? 'msg-ok' : 'msg-errore');
+    setTimeout(() => { el.className = 'messaggio'; }, 5000);
+  }
+
+  async function caricaDati() {
+    document.getElementById('dati-loading').style.display = 'block';
+    document.getElementById('dati-contenuto').style.display = 'none';
+
+    try {
+      const r = await fetch(API + '?action=leggi', { redirect: 'follow' });
+      const d = await r.json();
+
+      document.getElementById('tot-lucia').textContent   = euro(d.totLucia);
+      document.getElementById('tot-sergio').textContent  = euro(d.totSergio);
+      document.getElementById('tot-totale').textContent  = euro(d.totale);
+      document.getElementById('mese-lucia').textContent  = euro(d.meseLucia);
+      document.getElementById('mese-sergio').textContent = euro(d.meseSergio);
+
+      const saldo = String(d.saldo || '');
+      const box   = document.getElementById('saldo-box');
+      box.className = 'saldo-box';
+      if (saldo.includes('SERGIO'))     box.classList.add('saldo-sergio');
+      else if (saldo.includes('LUCIA')) box.classList.add('saldo-lucia');
+      else                              box.classList.add('saldo-pari');
+      box.textContent = saldo || '✅ Siete pari!';
+
+      document.getElementById('dati-loading').style.display = 'none';
+      document.getElementById('dati-contenuto').style.display = 'block';
+    } catch(err) {
+      document.getElementById('dati-loading').textContent = '⚠️ Errore caricamento dati';
+    }
+  }
+
+  async function aggiungiSpesa(chi) {
+    const importoId = chi === 'Lucia' ? 'importo-lucia' : 'importo-sergio';
+    const importo   = document.getElementById(importoId).value;
+    const nota      = document.getElementById('nota').value;
+    const btnId     = chi === 'Lucia' ? 'btn-lucia' : 'btn-sergio';
+    const btn       = document.getElementById(btnId);
+
+    if (!importo || parseFloat(importo) <= 0) {
+      mostraMsg('msg-spesa', '⚠️ Inserisci un importo valido!', false);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Salvataggio...';
+
+    const url = API + '?action=aggiungiSpesa&chi=' + encodeURIComponent(chi)
+              + '&importo=' + encodeURIComponent(importo)
+              + '&nota='    + encodeURIComponent(nota);
+
+    try {
+      const r = await fetch(url, { redirect: 'follow' });
+      const d = await r.json();
+      mostraMsg('msg-spesa', d.messaggio, d.ok);
+      if (d.ok) {
+        document.getElementById(importoId).value = '';
+        document.getElementById('nota').value = '';
+        setTimeout(caricaDati, 1000);
+      }
+    } catch(err) {
+      mostraMsg('msg-spesa', '⚠️ Errore di connessione', false);
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = chi === 'Lucia' ? '👩 Aggiungi spesa LUCIA' : '👨 Aggiungi spesa SERGIO';
+  }
+
+  function azzeraStep1() {
+    document.getElementById('codice-saldato').style.display = 'block';
+    mostraMsg('msg-azzera', '🔴 Scrivi SALDATO e premi Conferma', false);
+  }
+
+  async function azzeraStep2() {
+    const codice = document.getElementById('input-saldato').value;
+    const url    = API + '?action=azzeraStep2&codice=' + encodeURIComponent(codice);
+
+    try {
+      const r = await fetch(url, { redirect: 'follow' });
+      const d = await r.json();
+      mostraMsg('msg-azzera', d.messaggio, d.ok);
+      if (d.ok) {
+        document.getElementById('codice-saldato').style.display = 'none';
+        document.getElementById('input-saldato').value = '';
+        setTimeout(caricaDati, 1000);
+      }
+    } catch(err) {
+      mostraMsg('msg-azzera', '⚠️ Errore di connessione', false);
+    }
+  }
+
+  caricaDati();
+</script>
+</body>
+</html>
