@@ -1,0 +1,8 @@
+# Codice Apps Script: contiene email private, NON va nel repo pubblico
+apps-script/
+
+# File locali
+.env
+*.local
+.DS_Store
+Thumbs.db
