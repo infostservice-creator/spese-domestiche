@@ -441,9 +441,9 @@ select.input { appearance: none; -webkit-appearance: none; }
     <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M12 17.2s-3.2-1.9-3.2-4a1.7 1.7 0 0 1 3.2-.8 1.7 1.7 0 0 1 3.2.8c0 2.1-3.2 4-3.2 4Z" fill="#fff" stroke="none"/></svg>
   </div>
   <h1>Spese di casa</h1>
-  <p>Per entrare scrivi il codice di famiglia. Lo chiede solo la prima volta.</p>
+  <p>Per entrare scrivi il codice di famiglia di 6 cifre. Lo chiede solo la prima volta.</p>
   <form class="login-box" id="form-login" autocomplete="off">
-    <input class="input" id="login-codice" type="password" placeholder="Codice di famiglia" autocomplete="current-password" autocapitalize="off" spellcheck="false" aria-label="Codice di famiglia">
+    <input class="input campo-codice" id="login-codice" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Codice di 6 cifre" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Codice di famiglia di 6 cifre">
     <button class="btn pieno" type="submit" id="login-btn">Entra</button>
     <div class="login-err" id="login-err" role="alert"></div>
   </form>
@@ -465,6 +465,8 @@ select.input { appearance: none; -webkit-appearance: none; }
   var NOTA_MAX = 120;
   var NOME_RIC_MAX = 40;
   var LS_TOKEN = 'spese_family_token';
+  var CODICE_VALIDO = /^\d{6}$/;
+  var MSG_BLOCCATO = 'Troppi tentativi, riprova tra 15 minuti.';
   // Demo: ?demo=1, ?demo, ?demo=si … (tutto tranne ?demo=0). In demo la schermata del codice non compare mai.
   var parametri = new URLSearchParams(location.search);
   var DEMO = parametri.has('demo') && parametri.get('demo') !== '0';
@@ -571,6 +573,8 @@ select.input { appearance: none; -webkit-appearance: none; }
       if (!r || typeof r !== 'object') throw new ErroreApp('Risposta non valida dal server.');
       if (!r.ok) {
         if (r.errore === 'token') { esci('Il codice di famiglia non è più valido: inseriscilo di nuovo.'); }
+        // Blocco anti-tentativi: il codice salvato resta valido, si aspetta e basta
+        if (r.errore === 'bloccato') throw new ErroreApp(r.messaggio || MSG_BLOCCATO, 'bloccato');
         throw new ErroreApp(r.messaggio || 'Qualcosa è andato storto.', r.errore);
       }
       if (chiave) delete pendenti[chiave];
@@ -1159,7 +1163,7 @@ select.input { appearance: none; -webkit-appearance: none; }
     } else {
       html += '<p>Il codice di famiglia è salvato solo su questo telefono.</p>' +
         '<form id="form-codice" autocomplete="off"><label class="lbl" for="nuovo-codice">Cambia codice di famiglia</label>' +
-        '<input class="input" id="nuovo-codice" type="password" autocapitalize="off" spellcheck="false" placeholder="Nuovo codice">' +
+        '<input class="input campo-codice" id="nuovo-codice" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Nuovo codice di 6 cifre">' +
         '<div class="errore-form" id="codice-err"></div>' +
         '<button class="btn btn-brand pieno" type="submit" id="codice-salva">Salva codice</button></form>' +
         '<div class="azioni"><button class="btn btn-bordo pieno" data-act="esci" style="color:var(--danger)">Esci da questo telefono</button></div>';
@@ -1174,7 +1178,7 @@ select.input { appearance: none; -webkit-appearance: none; }
       ev.preventDefault();
       var nuovo = $('#nuovo-codice', sh).value.trim();
       var err = $('#codice-err', sh);
-      if (!nuovo) { err.textContent = 'Scrivi il nuovo codice.'; return; }
+      if (!CODICE_VALIDO.test(nuovo)) { err.textContent = 'Il codice è di 6 cifre.'; return; }
       var btn = $('#codice-salva', sh);
       occupato(btn, true);
       verificaCodice(nuovo).then(function (dati) {
@@ -1189,6 +1193,7 @@ select.input { appearance: none; -webkit-appearance: none; }
   function verificaCodice(codice) {
     return jsonp({ action: 'dati', token: codice }).then(function (r) {
       if (r && r.ok) return r.dati;
+      if (r && r.errore === 'bloccato') throw new ErroreApp(r.messaggio || MSG_BLOCCATO, 'bloccato');
       throw new ErroreApp(r && r.messaggio ? r.messaggio : 'Codice non valido.');
     }, function (e) {
       throw new ErroreApp(e && e.message === 'timeout' ? 'Il server non risponde, riprova.' : 'Errore di connessione, riprova.');
@@ -1213,7 +1218,8 @@ select.input { appearance: none; -webkit-appearance: none; }
   $('#form-login').addEventListener('submit', function (ev) {
     ev.preventDefault();
     var codice = $('#login-codice').value.trim();
-    if (!codice) { $('#login-err').textContent = 'Scrivi il codice di famiglia.'; return; }
+    // Un codice malformato non parte nemmeno: così non consuma uno dei 5 tentativi
+    if (!CODICE_VALIDO.test(codice)) { $('#login-err').textContent = 'Il codice di famiglia è di 6 cifre.'; return; }
     var btn = $('#login-btn');
     occupato(btn, true);
     $('#login-err').textContent = '';
@@ -1346,6 +1352,13 @@ select.input { appearance: none; -webkit-appearance: none; }
     }
   });
   // Invio sul campo importo = nessuna azione automatica (bisogna scegliere chi ha pagato)
+  // Nei campi del codice si possono scrivere solo cifre (massimo 6)
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains('campo-codice')) {
+      var pulito = e.target.value.replace(/\D/g, '').slice(0, 6);
+      if (pulito !== e.target.value) e.target.value = pulito;
+    }
+  });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') chiudiSheet();
     if (e.key === 'Enter' && e.target && e.target.id === 'in-saldato') { var b = $('[data-act="pareggio-2"]'); if (b) b.click(); }
