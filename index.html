@@ -465,7 +465,9 @@ select.input { appearance: none; -webkit-appearance: none; }
   var NOTA_MAX = 120;
   var NOME_RIC_MAX = 40;
   var LS_TOKEN = 'spese_family_token';
-  var DEMO = new URLSearchParams(location.search).get('demo') === '1';
+  // Demo: ?demo=1, ?demo, ?demo=si … (tutto tranne ?demo=0). In demo la schermata del codice non compare mai.
+  var parametri = new URLSearchParams(location.search);
+  var DEMO = parametri.has('demo') && parametri.get('demo') !== '0';
 
   var MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
   var MESI_BREVI = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
